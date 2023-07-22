@@ -1,0 +1,70 @@
+﻿@page "/fetchdata"
+@using FT.Domain.Models;
+@using Simple.OData.Client
+@inject ODataClient client
+
+<h3>FetchData</h3>
+
+<RadzenText TextStyle="TextStyle.H3" TagName="TagName.H1" Class="my-4">
+    Radzen Blazor Chart with line series
+</RadzenText>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-12 my-5">
+                <RadzenCard Class="w-100 mb-4" Style="display: flex; align-items: center; gap: 0.5rem" >
+                    <RadzenCheckBox @bind-Value="@smooth" Name="smooth"></RadzenCheckBox>
+                    <RadzenLabel Text="Smooth" For="smooth" Style="margin-right: 1rem;"/>
+                    <RadzenCheckBox @bind-Value="@showDataLabels" Name="dataLabels"></RadzenCheckBox>
+                    <RadzenLabel Text="Show Data Labels" For="dataLabels" />
+                </RadzenCard>
+                <RadzenChart>
+                    <RadzenLineSeries Smooth="@smooth" Data="@AfstemningsMøder" 
+                        CategoryProperty="X" LineType="LineType.Dashed" ValueProperty="Count">
+                        <RadzenMarkers MarkerType="MarkerType.Square" />
+                        <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                    </RadzenLineSeries>
+                    @*<RadzenCategoryAxis Padding="20" Formatter="@FormatAsMonth" />
+                    <RadzenValueAxis Formatter="@FormatAsUSD">
+                        <RadzenGridLines Visible="true" />
+                        <RadzenAxisTitle Text="Revenue in USD" />
+                    </RadzenValueAxis>*@
+                </RadzenChart>
+            </div>
+        </div>
+    </div>
+
+@code {
+    private bool smooth = false;
+    private bool showDataLabels = false;
+    private List<Afstemning> _afstemninger = new List<Afstemning>();
+    private IEnumerable<ChartItem> AfstemningsMøder = new List<ChartItem>();
+    protected async override Task OnInitializedAsync()
+    {
+        var annotations = new ODataFeedAnnotations();
+        _afstemninger = (await client.For<Afstemning>()
+            .Expand(x => x.Møde)
+            .FindEntriesAsync(annotations)).ToList();
+        Console.WriteLine($"This many entries: {annotations.Count}");
+        while (annotations.NextPageLink != null)
+        {
+            _afstemninger.AddRange(await client
+                .For
+    <Afstemning>()
+                .Expand(x => x.Møde)
+                .FindEntriesAsync(annotations.NextPageLink, annotations));
+        }
+
+        AfstemningsMøder = _afstemninger.GroupBy(x => (x.Møde.dato.Value.Year, x.Møde.dato.Value.Month)).Select(x => new
+            ChartItem {
+                X = $"{x.Key.Year} {x.Key.Month}",
+                Count = x.Count()
+            });
+    }
+
+    public class ChartItem
+    {
+        public string X { get; set; }
+        public int Count { get; set; }
+    }
+}
