@@ -6,9 +6,14 @@
 
 <h3>FetchData</h3>
 
-<RadzenText TextStyle="TextStyle.H3" TagName="TagName.H1" Class="my-4">
-    Radzen Blazor Chart with line series
-</RadzenText>
+@if(!ChartData.Any())
+{
+    <div class="spinner"></div>
+} else
+{
+    <RadzenText TextStyle="TextStyle.H3" TagName="TagName.H1" Class="my-4">
+        Radzen Blazor Chart with line series
+    </RadzenText>
 
     <div class="container">
         <div class="row">
@@ -34,6 +39,8 @@
             </div>
         </div>
     </div>
+}
+
 
 @code {
     private bool smooth = false;
@@ -56,7 +63,8 @@
                     .Top(0)
                     .FindEntriesAsync(annotations))
                     .ToList();
-            ChartData.Add(new() { X = yearToQuery.ToString(), Count = (int)annotations.Count });
+            if(annotations.Count >  0)
+                ChartData.Add(new() { X = yearToQuery.ToString(), Count = (int)annotations.Count });
             yearToQuery--;
         } while (annotations.Count > 0);
         ChartData.Reverse();
