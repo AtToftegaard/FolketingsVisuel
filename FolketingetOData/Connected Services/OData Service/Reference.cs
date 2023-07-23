@@ -11055,7 +11055,7 @@ namespace FT.Domain.Models
         /// There are no comments for Property dato in the schema.
         /// </summary>
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Services.Design", "1.0.0")]
-        public global::System.Nullable<global::System.DateTime> dato
+        public global::System.DateTime dato
         {
             get
             {
@@ -11070,7 +11070,7 @@ namespace FT.Domain.Models
             }
         }
         [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Data.Services.Design", "1.0.0")]
-        private global::System.Nullable<global::System.DateTime> _dato;
+        private global::System.DateTime _dato;
         partial void OndatoChanging(global::System.Nullable<global::System.DateTime> value);
         partial void OndatoChanged();
         /// <summary>

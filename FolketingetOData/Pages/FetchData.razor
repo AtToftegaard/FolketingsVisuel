@@ -1,6 +1,7 @@
 ﻿@page "/fetchdata"
 @using FT.Domain.Models;
 @using Simple.OData.Client
+@using System.Diagnostics;
 @inject ODataClient client
 
 <h3>FetchData</h3>
@@ -19,7 +20,7 @@
                     <RadzenLabel Text="Show Data Labels" For="dataLabels" />
                 </RadzenCard>
                 <RadzenChart>
-                    <RadzenLineSeries Smooth="@smooth" Data="@AfstemningsMøder" 
+                    <RadzenLineSeries Smooth="@smooth" Data="@ChartData" 
                         CategoryProperty="X" LineType="LineType.Dashed" ValueProperty="Count">
                         <RadzenMarkers MarkerType="MarkerType.Square" />
                         <RadzenSeriesDataLabels Visible="@showDataLabels" />
@@ -38,33 +39,66 @@
     private bool smooth = false;
     private bool showDataLabels = false;
     private List<Afstemning> _afstemninger = new List<Afstemning>();
-    private IEnumerable<ChartItem> AfstemningsMøder = new List<ChartItem>();
+    private List<ChartItem> ChartData = new List<ChartItem>();
     protected async override Task OnInitializedAsync()
     {
         var annotations = new ODataFeedAnnotations();
-        _afstemninger = (await client.For<Afstemning>()
-            .Expand(x => x.Møde)
-            .FindEntriesAsync(annotations)).ToList();
-        Console.WriteLine($"This many entries: {annotations.Count}");
-        while (annotations.NextPageLink != null)
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        var tasks = new List<Task<IEnumerable<Afstemning>>>();
+        int yearToQuery = DateTime.Now.Year;
+        do
         {
-            _afstemninger.AddRange(await client
-                .For
-    <Afstemning>()
-                .Expand(x => x.Møde)
-                .FindEntriesAsync(annotations.NextPageLink, annotations));
-        }
+            var result = (await client
+                    .For<Afstemning>()
+                    .Expand(x => x.Møde)
+                    .Filter(x => x.Møde.dato.Year == yearToQuery)
+                    .Top(0)
+                    .FindEntriesAsync(annotations))
+                    .ToList();
+            ChartData.Add(new() { X = yearToQuery.ToString(), Count = (int)annotations.Count });
+            yearToQuery--;
+        } while (annotations.Count > 0);
+        ChartData.Reverse();
+        Console.WriteLine(string.Join(',', ChartData.Select(x => (x.X, x.Count))));
+        //for (int i = 100; i < annotations.Count + 100; i += 100)
+        //{
+        //    Console.WriteLine($"Adding for {i}");
+        //    tasks.Add((client
+        //        .For<Afstemning>()
+        //        .Expand(x => x.Møde)
+        //        .Filter(x => x.Møde.dato)
+        //        .Skip(i)
+        //        .FindEntriesAsync()));
+        //}
+        //var result = await Task.WhenAll<IEnumerable<Afstemning>>(tasks);
+        Console.WriteLine($"{stopwatch.ElapsedMilliseconds} - finished download");
+        //_afstemninger.AddRange(result.SelectMany(x => x));
+        //while (annotations.NextPageLink != null)
+        //{
+        //    _afstemninger.AddRange(await client
+        //        .For<Afstemning>()
+        //        .Expand(x => x.Møde)
+        //        .FindEntriesAsync(annotations.NextPageLink, annotations));
+        //}
 
-        AfstemningsMøder = _afstemninger.GroupBy(x => (x.Møde.dato.Value.Year, x.Møde.dato.Value.Month)).Select(x => new
-            ChartItem {
-                X = $"{x.Key.Year} {x.Key.Month}",
-                Count = x.Count()
-            });
+        //ChartData = _afstemninger.GroupBy(x => x.Møde.dato.Year).Select(x => new
+        //    ChartItem {
+        //        X = $"{x.Key}",
+        //        Count = x.Count()
+        //    });
+        stopwatch.Stop();
+        Console.WriteLine($"{stopwatch.ElapsedMilliseconds} - finished OnInitializedAsync");
     }
 
     public class ChartItem
     {
         public string X { get; set; }
         public int Count { get; set; }
+    }
+
+    private int GetNumberOfEntries(DateTime when)
+    {
+        return 0;
     }
 }
