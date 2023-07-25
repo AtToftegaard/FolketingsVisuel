@@ -66,8 +66,10 @@
             if(annotations.Count >  0)
                 ChartData.Add(new() { X = yearToQuery.ToString(), Count = (int)annotations.Count });
             yearToQuery--;
+            await InvokeAsync(StateHasChanged);
         } while (annotations.Count > 0);
         ChartData.Reverse();
+        await InvokeAsync(StateHasChanged);
         Console.WriteLine(string.Join(',', ChartData.Select(x => (x.X, x.Count))));
         //for (int i = 100; i < annotations.Count + 100; i += 100)
         //{

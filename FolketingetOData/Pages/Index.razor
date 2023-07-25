@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using BlazorApexCharts
 
 <PageTitle>Index</PageTitle>
 
@@ -6,8 +7,34 @@
 
 Welcome to your new app.
 
-<SurveyPrompt Title="How is Blazor working for you?" />
-<RadzenButton Text="@text"></RadzenButton>
+<ApexChart TItem="Order"
+           Title="Order Net Value">
+
+    <ApexPointSeries TItem="Order"
+                Items="Orders"
+                Name="Gross Value"
+                XValue="@(e => e.Country)"
+                YAggregate="@(e => e.Sum(e => e.GrossValue))"
+                OrderByDescending="e=>e.Y"
+                SeriesType="SeriesType.Bar"/>
+
+    <ApexPointSeries TItem="Order"
+                Items="Orders"
+                Name="Net Value"
+                XValue="@(e => e.Country)"
+                YAggregate="@(e => e.Sum(e => e.NetValue))"
+                OrderByDescending="e=>e.Y"
+                SeriesType="SeriesType.Bar"/>
+</ApexChart>
+
 @code {
     string text = "Hi";
+    private List<Order> Orders { get; set; } = new List<Order>() { new Order() { Country = "Germany", GrossValue = 1, NetValue = 2 } };
+
+    class Order
+    {
+        public string Country { get; set; }
+        public int GrossValue { get; set; }
+        public int NetValue { get; set; }
+    }
 }
